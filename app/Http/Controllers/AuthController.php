@@ -2,31 +2,31 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
+use App\Http\Requests\LoginRequest;
+use App\Services\AuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    public function login(Request $request): JsonResponse
+    public function __construct(private AuthService $auth)
     {
-        $data = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required', 'string'],
-        ]);
+    }
 
-        $user = User::where('email', $data['email'])->first();
+    public function login(LoginRequest $request): JsonResponse
+    {
+        $result = $this->auth->attempt(
+            $request->validated('email'),
+            $request->validated('password'),
+        );
 
-        if (! $user || ! Hash::check($data['password'], $user->password)) {
+        if ($result === null) {
             return response()->json([
                 'message' => 'Email ou mot de passe incorrect.',
             ], 401);
         }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json(['token' => $token, 'user' => $user]);
+        return response()->json($result);
     }
 
     public function me(Request $request): JsonResponse
@@ -36,7 +36,7 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
-        $request->user()->currentAccessToken()->delete();
+        $this->auth->logout($request->user());
 
         return response()->json(['message' => 'Déconnecté.']);
     }

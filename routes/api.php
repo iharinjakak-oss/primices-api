@@ -15,5 +15,6 @@ Route::middleware(['auth:sanctum', 'role:admin,super_admin'])
     ->group(function () {
         Route::get('/', [UserController::class, 'index']);
         Route::post('/', [UserController::class, 'store']);
+        Route::put('/{user}', [UserController::class, 'update']);
         Route::delete('/{user}', [UserController::class, 'destroy']);
-    });
+    }); 

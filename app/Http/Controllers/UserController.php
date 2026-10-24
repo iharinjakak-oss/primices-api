@@ -2,59 +2,41 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
+use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
-    public function index(): JsonResponse
+    public function __construct(private UserService $users)
     {
-        $users = User::select('id', 'name', 'email', 'role', 'created_at')
-            ->orderBy('id')
-            ->get();
-
-        return response()->json($users);
     }
 
-    public function store(Request $request): JsonResponse
+    public function index(): JsonResponse
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8'],
-            'role' => ['required', Rule::in(['super_admin', 'admin', 'user'])],
-        ]);
+        return response()->json($this->users->list());
+    }
 
-        if ($request->user()->role === 'admin' && $data['role'] !== 'user') {
-            return response()->json([
-                'message' => 'Un admin ne peut créer que des utilisateurs simples.',
-            ], 403);
-        }
-
-        $user = User::create($data);
+    public function store(StoreUserRequest $request): JsonResponse
+    {
+        $user = $this->users->create($request->user(), $request->validated());
 
         return response()->json($user, 201);
     }
 
+    public function update(UpdateUserRequest $request, User $user): JsonResponse
+    {
+        $updated = $this->users->update($request->user(), $user, $request->validated());
+
+        return response()->json($updated->only(['id', 'name', 'email', 'role']));
+    }
+
     public function destroy(Request $request, User $user): JsonResponse
     {
-        $current = $request->user();
-
-        if ($current->id === $user->id) {
-            return response()->json([
-                'message' => 'Vous ne pouvez pas supprimer votre propre compte.',
-            ], 403);
-        }
-
-        if ($current->role === 'admin' && $user->role !== 'user') {
-            return response()->json([
-                'message' => 'Un admin ne peut supprimer que des utilisateurs simples.',
-            ], 403);
-        }
-
-        $user->delete();
+        $this->users->delete($request->user(), $user);
 
         return response()->json(['message' => 'Utilisateur supprimé.']);
     }
