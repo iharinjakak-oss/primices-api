@@ -56,6 +56,7 @@ class UserService
             abort(403, 'Un admin ne peut supprimer que des utilisateurs simples.');
         }
 
-        $target->delete();
+        $target->tokens()->delete();
+        $target->delete();;
     }
 }
