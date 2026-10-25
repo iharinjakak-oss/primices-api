@@ -21,6 +21,21 @@ class AuthService
         ];
     }
 
+    public function register(array $data): array
+    {
+        $user = User::create([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'password' => $data['password'],
+            'role' => 'user',
+        ]);
+
+        return [
+            'token' => $user->createToken('auth_token')->plainTextToken,
+            'user' => $user,
+        ];
+    }
+
     public function logout(User $user): void
     {
         $user->currentAccessToken()->delete();
