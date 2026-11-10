@@ -21,4 +21,16 @@ class StoreUserRequest extends FormRequest
             'role' => ['required', Rule::in(['super_admin', 'admin', 'user'])],
         ];
     }
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'Le nom est obligatoire.',
+            'email.required' => "L'email est obligatoire.",
+            'email.email' => "L'email n'est pas valide.",
+            'email.unique' => 'Cet email est déjà utilisé.',
+            'password.required' => 'Le mot de passe est obligatoire.',
+            'password.min' => 'Le mot de passe doit contenir au moins 8 caractères.',
+            'role.in' => "Le rôle choisi n'est pas valide.",
+        ];
+    }
 }
